@@ -1,0 +1,552 @@
+/*
+* This program finds very high range of fibonacci number 
+* I have tested it till 85354 (contains about 20000 digits).
+* I have built data structure to store as high number as required and 
+* Implemented Number system with user required base (limitation: base must be mutiple of 10, cannot exceed the MAX_INT)
+* I have not removed any comments, so this is the raw form.
+* This was part of an online contest held by stackoverflow.com and I was placed 6th.
+* Additional modifications: use of float or double.
+*/
+
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+
+#include <limits>
+#include <float.h>
+const int max_int = INT_MAX;
+const float max_float = FLT_MAX;
+
+struct number{
+	int num;
+	number* ptr;
+	number* pre;
+	number(int x){
+		num = x;		// each num will store value from 0-9, emulates the primitve data structure. NOW changed see CustomFiboSize() method
+		ptr = 0;
+		pre = 0;
+	}
+};
+
+struct numFloat{
+	float num;
+	numFloat* ptr;
+	numFloat* pre;
+	numFloat(float x){
+		num = x;
+		ptr = 0;
+		pre = 0;
+	}
+};
+
+// This fibonacci uses the decimal system primitive data structure implemented uing linked list
+// Next will build fibonacci using the binary system primitive data structure
+
+using namespace std;
+void checkFibo(int, int, int);
+void CustomFibo(int);
+void CustomFiboSize(int, int);
+void CustomFloat(int, float);
+
+int main(){
+	//cout<<"\nMax Int: "<<max_int;
+	//cout<<"\nMax Float: "<<max_float;
+	int v;
+	cout<<"\nGive the number: ";
+	cin>>v;
+	
+	int n = 10;
+	cout<<"Give the base number system: ";
+	cin>>n;
+	
+	int val1 = 1;
+	int val2 = 1;
+	
+	if(v <= 2){
+		cout<<"Fibonacci Number: "<<val1;
+		return 0;
+	}
+
+	// Iterative way with int as data structure.
+	//checkFibo(val1, val2, v);
+	CustomFibo(v);
+	//CustomFiboSize(v, n);
+	
+	// 1 trillion
+	float num = 1000000000000;
+	//cout<<"Give the base number system (FLOAT): ";
+	//cin>>num;
+	
+	//cout<<"\nBase: "<<num<<endl;
+	//float value = 102;
+	//printf("%5.0f",value);
+	//CustomFloat(v, num);
+}
+
+void CustomFibo(int v){
+	
+	// This variable will tell how many addition to be done, v-go, 
+	// say v = 3, go = 2, need 1 more addition to get 3rd Fibonacci Number
+	int go = 2;
+	int carry = 0;
+	int temp = 0;
+	number* head1 = new number(1);
+	number* buffer = new number(10);
+	head1->ptr = buffer;
+	buffer->pre = head1;
+	number* head2 = new number(1);
+	buffer = new number(10);
+	head2->ptr = buffer;
+	buffer->pre = head2;
+	bool flag1 = true;							// marks the end of first number
+	bool flag2 = true;							// marks the end of second number
+	
+	
+	while(go != v){								// This while loop checks for nth fibonacci number
+		
+	number* index1 = head1;
+	number* index2 = head2;											
+	number* index3 = new number(-1);
+	number* prev = index3;
+	flag1 = true;
+	flag2 = true;
+	carry = 0;
+	
+		do{										// This do-while loop does the number addition
+			if(index3->num != -1){				// check if not first instance of index3
+				index3->ptr = new number(0);
+				number* back = index3;			// prev points to head of list i.e. the last order digit
+				index3 = index3->ptr;			// moves to next digit
+				index3->pre = back;
+				back->ptr = index3;
+			}
+			
+												// Adding the single digits, first digit is of lowest order, last digit is of highest order
+			if(index1->num != 10 && index2->num != 10){
+				temp = index1->num + index2->num + carry;
+			}
+			if(index1->num == 10 && index2->num != 10 && flag1){		// When index1 is one digit shorter than index2
+				temp = index2->num + carry;
+				flag1 = false;
+			}		
+			if(index1->num != 10 && index2->num == 10 && flag2){		// When index2 is one digit shorter than index1
+				temp = index1->num + carry;
+				flag2 = false;
+			}
+			
+			// Only Works for single digit numbers i.e. index1 and index2 are of length 1.
+			// Whenever the numbers are of equal length and reached their last digit
+//			if(index1->ptr == 0 && index2->ptr == 0){		
+//				temp = index1->num + index2->num + carry;
+//			}
+			
+			carry = 0;
+			if(temp > 9){		// Carry occured
+				carry = 1;
+				temp = temp - 10;
+			}
+			
+			// put the digit
+			index3->num = temp;
+
+			// Moving pointers to next digit
+			if(index1->num != 10){
+				index1 = index1->ptr;
+			}
+			if(index2->num != 10){
+				index2 = index2->ptr;
+			}
+		
+		}while(index1->num != 10 || index2->num != 10);// Inner While loop ends, this does not add the last digit to be added
+		
+		// Carry will remain when both numbers had same number of digits
+		if(carry == 1){
+			index3->ptr = new number(0);
+			index3->num;
+			number* back = index3;
+			index3 = index3->ptr;
+			index3->pre = back;
+			back->ptr = index3;
+			index3->num = carry;
+//			if(!flag1)				// happen when index1 is last digit, index2 is not
+//				index3->num = index2->num + carry;
+//			if(flag1 && flag2)		// both are last digits.
+//				index3->num = carry;
+		}
+		
+		// Adding the last number check
+		number* last = new number(10);
+		index3->ptr = last;
+		last->pre = index3;
+		
+		// Fibonacci series moves ahead
+		head1 = head2;
+		head2 = prev;
+		
+		go++;
+		
+	}// Outer While Loop ends
+	
+	number* head = head2;
+	while(head->ptr != 0){
+		head = head->ptr;
+	}
+	int count = 0;
+	// Skips the last digit, start from second last
+	head = head->pre;
+	cout<<"\nFibonacci Number: "<<endl;
+	while(head->pre != 0){
+		cout<<head->num;
+		head = head->pre;
+		count++;
+	}
+	cout<<head->num;				// prints the first digit whose head->pre is 0
+	count++;
+	cout<<"\n\nNumber of digits: "<<count;
+	
+}									// End of main function
+
+void checkFibo(int val1, int val2, int v){
+	for(int i = 3; i<=v; i++){
+		int temp = val2;
+		val2 = val2 + val1;
+		val1 = temp;
+	}
+	cout<<"Fibonacci Number: "<<val2;
+}
+
+void CustomFiboSize(int v, int n){
+	
+	// Here n is the number base system you want to use
+	// Say, n=2, means binary number system
+	// Say, n=10, means decimal number system, and so on.
+	
+	// This variable will tell how many addition to be done, v-go, 
+	// say v = 3, go = 2, need 1 more addition to get 3rd Fibonacci Number
+	int go = 2;
+	int carry = 0;
+	int temp = 0;
+	number* head1 = new number(1);
+	number* buffer = new number(n);
+	head1->ptr = buffer;
+	buffer->pre = head1;
+	number* head2 = new number(1);
+	buffer = new number(n);
+	head2->ptr = buffer;
+	buffer->pre = head2;
+	bool flag1 = true;							// marks the end of first number
+	bool flag2 = true;							// marks the end of second number
+	
+	
+	while(go != v){								// This while loop checks for nth fibonacci number
+		
+	number* index1 = head1;
+	number* index2 = head2;											
+	number* index3 = new number(-1);
+	number* prev = index3;
+	flag1 = true;
+	flag2 = true;
+	carry = 0;
+	
+		do{										// This do-while loop does the number addition
+			if(index3->num != -1){				// check if not first instance of index3
+				index3->ptr = new number(0);
+				number* back = index3;			// prev points to head of list i.e. the last order digit
+				index3 = index3->ptr;			// moves to next digit
+				index3->pre = back;
+				back->ptr = index3;
+			}
+			
+												// Adding the single digits, first digit is of lowest order, last digit is of highest order
+			if(index1->num != n && index2->num != n){
+				temp = index1->num + index2->num + carry;
+			}
+			if(index1->num == n && index2->num != n && flag1){		// When index1 is one digit shorter than index2
+				temp = index2->num + carry;
+				flag1 = false;
+			}		
+			if(index1->num != n && index2->num == n && flag2){		// When index2 is one digit shorter than index1
+				temp = index1->num + carry;
+				flag2 = false;
+			}
+			
+			// Only Works for single digit numbers i.e. index1 and index2 are of length 1.
+			// Whenever the numbers are of equal length and reached their last digit
+//			if(index1->ptr == 0 && index2->ptr == 0){		
+//				temp = index1->num + index2->num + carry;
+//			}
+			
+			carry = 0;
+			if(temp >= n){		// Carry occured
+				carry = 1;
+				temp = temp - n;
+			}
+			
+			// put the digit
+			index3->num = temp;
+
+			// Moving pointers to next digit
+			if(index1->num != n){
+				index1 = index1->ptr;
+			}
+			if(index2->num != n){
+				index2 = index2->ptr;
+			}
+		
+		}while(index1->num != n || index2->num != n);// Inner While loop ends, this does not add the last digit to be added
+		
+		// Carry will remain when both numbers had same number of digits
+		if(carry >= 1){
+			index3->ptr = new number(0);
+			number* back = index3;
+			index3 = index3->ptr;
+			index3->pre = back;
+			back->ptr = index3;
+			index3->num = carry;
+//			if(!flag1)				// happen when index1 is last digit, index2 is not
+//				index3->num = index2->num + carry;
+//			if(flag1 && flag2)		// both are last digits.
+//				index3->num = carry;
+		}
+		
+		// Adding the last number check
+		number* last = new number(n);
+		index3->ptr = last;
+		last->pre = index3;
+		
+		// Fibonacci series moves ahead
+		head1 = head2;
+		head2 = prev;
+		
+		go++;
+		
+	}// Outer While Loop ends
+	
+	int total = n;
+	int zeroes = 0;
+	while(total > 1){
+		zeroes++;
+		total = total / 10;
+	}
+	
+	number* head = head2;
+	while(head->ptr != 0){
+		head = head->ptr;
+	}
+	
+	// Issue is that not printing the previous zeroes like, 00120 is shown as 120.
+	
+	int count = 0;
+	// Skips the last digit, start from second last
+	head = head->pre;
+	cout<<"\nFibonacci Number: "<<endl;
+	while(head->pre != 0){
+//		if( (10*zeroes) )
+
+		int p = n/10;
+		bool run = true;
+		
+		// check if you are already having the number of digits equal to n's zeroes.
+		if(head->num >= p){
+			run = false;
+			//printf("%d",head->num);
+			cout<<head->num;
+		}
+		
+		// I think cout was overriding the previous values
+		while(p > 1 && run){
+			if(head->num == 0){
+				for(int j=10;j<=n;j=j*10){
+					//printf("0");
+					cout<<"0";
+				}
+				break;
+			}
+			if(head->num < p){
+				//printf("0");
+				cout<<"0";
+			}
+			p = p / 10;
+		}
+		
+		if(run){
+			//printf("%d",head->num);
+			cout<<head->num;
+		}
+			
+		head = head->pre;
+		count++;
+	}
+	cout<<head->num;				// prints the first digit whose head->pre is 0
+	count++;
+	
+	cout<<"\n\nNumber of digits: "<<count*zeroes;
+	
+}
+
+
+// Uses float data structure
+void CustomFloat(int v, float n){
+	
+	// Here n is the number base system you want to use
+	// Say, n=2, means binary number system
+	// Say, n=10, means decimal number system, and so on.
+	
+	// This variable will tell how many addition to be done, v-go, 
+	// say v = 3, go = 2, need 1 more addition to get 3rd Fibonacci Number
+	int go = 2;
+	int carry = 0;
+	float temp = 0;
+	numFloat* head1 = new numFloat(1);
+	numFloat* buffer = new numFloat(n);
+	head1->ptr = buffer;
+	buffer->pre = head1;
+	numFloat* head2 = new numFloat(1);
+	buffer = new numFloat(n);
+	head2->ptr = buffer;
+	buffer->pre = head2;
+	bool flag1 = true;							// marks the end of first number
+	bool flag2 = true;							// marks the end of second number
+	
+	
+	while(go != v){								// This while loop checks for nth fibonacci number
+		
+	numFloat* index1 = head1;
+	numFloat* index2 = head2;											
+	numFloat* index3 = new numFloat(-1);
+	numFloat* prev = index3;
+	flag1 = true;
+	flag2 = true;
+	carry = 0;
+	
+		do{										// This do-while loop does the number addition
+			if(index3->num != -1){				// check if not first instance of index3
+				index3->ptr = new numFloat(0);
+				numFloat* back = index3;			// prev points to head of list i.e. the last order digit
+				index3 = index3->ptr;			// moves to next digit
+				index3->pre = back;
+				back->ptr = index3;
+			}
+			
+												// Adding the single digits, first digit is of lowest order, last digit is of highest order
+			if(index1->num != n && index2->num != n){
+				temp = index1->num + index2->num + carry;
+			}
+			if(index1->num == n && index2->num != n && flag1){		// When index1 is one digit shorter than index2
+				temp = index2->num + carry;
+				flag1 = false;
+			}		
+			if(index1->num != n && index2->num == n && flag2){		// When index2 is one digit shorter than index1
+				temp = index1->num + carry;
+				flag2 = false;
+			}
+			
+			// Only Works for single digit numbers i.e. index1 and index2 are of length 1.
+			// Whenever the numbers are of equal length and reached their last digit
+//			if(index1->ptr == 0 && index2->ptr == 0){		
+//				temp = index1->num + index2->num + carry;
+//			}
+			
+			carry = 0;
+			if(temp >= n){		// Carry occured, will always be 1 if base system of type 10 to some power.
+				carry = 1;
+				temp = temp - n;
+			}
+			
+			// put the digit
+			index3->num = temp;
+
+			// Moving pointers to next digit
+			if(index1->num != n){
+				index1 = index1->ptr;
+			}
+			if(index2->num != n){
+				index2 = index2->ptr;
+			}
+		
+		}while(index1->num != n || index2->num != n);// Inner While loop ends, this does not add the last digit to be added
+		
+		// Carry will remain when both numbers had same number of digits
+		if(carry >= 1){
+			index3->ptr = new numFloat(0);
+			numFloat* back = index3;
+			index3 = index3->ptr;
+			index3->pre = back;
+			back->ptr = index3;
+			index3->num = carry;
+//			if(!flag1)				// happen when index1 is last digit, index2 is not
+//				index3->num = index2->num + carry;
+//			if(flag1 && flag2)		// both are last digits.
+//				index3->num = carry;
+		}
+		
+		// Adding the last number check
+		numFloat* last = new numFloat(n);
+		index3->ptr = last;
+		last->pre = index3;
+		
+		// Fibonacci series moves ahead
+		head1 = head2;
+		head2 = prev;
+		
+		go++;
+		
+	}// Outer While Loop ends
+	
+	numFloat* head = head2;
+	while(head->ptr != 0){
+		head = head->ptr;
+	}
+//	int count = 0;
+	// Skips the last digit, start from second last
+	head = head->pre;
+	cout<<"\nFibonacci Number: "<<endl;
+	
+	while(head->pre != 0){
+		
+		float p = n/10;
+		bool run = true;
+		
+		// check if you are already having the number of digits equal to n's zeroes.
+		if(head->num >= p){
+			run = false;
+			printf("%.0f",head->num);
+			//cout<<head->num;
+		}
+		
+		// I think cout was overriding the previous values
+		while(p > 1 && run){
+			if(head->num == 0){
+				for(float j=10;j<=n;j=j*10){
+					//printf("0");
+					cout<<"0";
+				}
+				break;
+			}
+			if(head->num < p){
+				//printf("0");
+				cout<<"0";
+			}
+			p = p / 10;
+		}
+		
+		if(run){
+			printf("%.0f",head->num);
+			//cout<<head->num;
+		}
+			
+		head = head->pre;
+//		count++;
+
+	}
+	printf("%.0f",head->num);
+//	cout<<head->num;				// prints the first digit whose head->pre is 0
+//	count++;
+//	int times = -1;
+//  while(n > 1){
+//		times++;
+//		n = n / 10;
+//	}
+//  cout<<"\n\nNumber of digits: "<<count*times;
+	
+}
